@@ -1,5 +1,7 @@
 #! python3
 
+# TODO - Expired back order not working.
+
 import pyautogui, time, os, logging, sys, random, pprint, copy
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -11,7 +13,8 @@ ONIGIRI = 'onigiri'
 GUNKAN_MAKI = 'gunkan_maki'
 CALIFORNIA_ROLL = 'california_roll'
 SALMON_ROLL = 'salmon_roll'
-ALL_ORDER_TYPES = (ONIGIRI, GUNKAN_MAKI, CALIFORNIA_ROLL, SALMON_ROLL)
+SHRIMP_SUSHI = 'shrimp_sushi'
+ALL_ORDER_TYPES = (ONIGIRI, GUNKAN_MAKI, CALIFORNIA_ROLL, SALMON_ROLL, SHRIMP_SUSHI)
 
 # ingredient constants (don't change these: the image filenames depend on these specific values)
 SHRIMP = 'shrimp'
@@ -21,8 +24,12 @@ ROE = 'roe'
 SALMON = 'salmon'
 UNAGI = 'unagi'
 
+ORDER_TYPE_KEY = 'orderKey'
+EXPIRATION_KEY = 'expirationKey'
+
 MIN_INGREDIENTS = 4 # if an ingredient gets below this value, order more.
 PLATE_CLEARING_FREQ = 8 # plates are cleared roughly ever this number of seconds at least
+NORMAL_RESTOCK_TIME = 7 # the number of seconds it takes to restock inventory after ordering it (at normal speed, not express)
 
 # inventory constant
 INVENTORY = {SHRIMP: 5, RICE: 10,
@@ -31,7 +38,8 @@ INVENTORY = {SHRIMP: 5, RICE: 10,
 RECIPE = {ONIGIRI:         {RICE: 2, NORI: 1},
           CALIFORNIA_ROLL: {RICE: 1, NORI: 1, ROE: 1},
           GUNKAN_MAKI:     {RICE: 1, NORI: 1, ROE: 2},
-          SALMON_ROLL:     {RICE: 1, NORI: 1, SALMON: 2},}
+          SALMON_ROLL:     {RICE: 1, NORI: 1, SALMON: 2},
+          SHRIMP_SUSHI:    {RICE: 1, NORI: 1, SHRIMP: 2},}
 
 GAME_REGION = ()
 ORDERING_COMPLETE = {SHRIMP: None, RICE: None, NORI: None, ROE: None, SALMON: None, UNAGI: None}
@@ -134,7 +142,7 @@ def navigateStartGameMenu():
 
 
 def startServing():
-    global LAST_GAME_OVER_CHECK
+    global LAST_GAME_OVER_CHECK, INVENTORY
     orders = {}
     backOrders = {}
     LAST_GAME_OVER_CHECK = time.time()
@@ -148,11 +156,20 @@ def startServing():
             logging.debug('Removed orders: %s' % (removed))
         orders = newestOrders
 
-        for pos, order in added.items():
+        for pos, orderValue in added.items():
+            order = orderValue[ORDER_TYPE_KEY]
             result = makeOrder(order)
             if result is not None:
                 orderIngredient(result)
                 backOrders[pos] = order
+
+        # See if any expired orders need to be remade
+        for pos, orderValue in orders.items():
+            order = orderValue[ORDER_TYPE_KEY]
+            expiration = orderValue[EXPIRATION_KEY]
+            if time.time() > expiration:
+                backOrders[pos] = order
+                logging.debug('Expired order detected. Adding %s to back orders.' % (order))
 
         if random.randint(1, 10) == 1 or time.time() - PLATE_CLEARING_FREQ > LAST_PLATE_CLEARING:
             clickOnPlates()
@@ -172,11 +189,37 @@ def startServing():
             orderIngredientsIfNeeded()
 
         if time.time() - 12 > LAST_GAME_OVER_CHECK:
-            checkForGameOver()
+            result = checkForGameOver()
+            if result == 'win':
+                # Reset inventory and orders.
+                INVENTORY = {SHRIMP: 5, RICE: 10,
+                             NORI: 10, ROE: 10,
+                             SALMON: 5, UNAGI: 5}
+                backOrders = {}
+                orders = {}
+
+                logging.debug('Level complete.')
+
+                # Click buttons to continue to next level.
+                pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
+                pyautogui.click(pos, duration=0.25)
+                logging.debug('Clicked on Continue button.')
+                pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
+                pyautogui.click(pos, duration=0.25)
+                logging.debug('Clicked on Continue button.')
 
 
 def checkForGameOver():
-    pass # TODO
+    # check for "You Win" message
+    result = pyautogui.locateOnScreen(imPath('you_win.png'), region=(GAME_REGION[0] + 188, GAME_REGION[1] + 94, 262, 60))
+    if result is not None:
+        return 'win'
+
+    result = pyautogui.locateOnScreen(imPath('you_failed.png'), region=(GAME_REGION[0] + 167, GAME_REGION[1] + 133, 314, 39))
+    if result is not None:
+        logging.debug('Game over. Quitting.')
+        sys.exit()
+
 
 def clickOnPlates():
     global LAST_PLATE_CLEARING
@@ -188,12 +231,10 @@ def clickOnPlates():
 
 def getOrders():
     orders = {}
-    #startTime = time.time()
     for orderType in (ALL_ORDER_TYPES):
         allOrders = pyautogui.locateAllOnScreen(imPath('%s_order.png' % orderType), region=(GAME_REGION[0] + 32, GAME_REGION[1] + 46, 558, 44))
         for order in allOrders:
-            orders[order] = orderType # keys are regions, values are order type
-    #logging.debug('Scanning for orders took %s secs.' % (round(time.time() - startTime, 2)))
+            orders[order] = {ORDER_TYPE_KEY: orderType, EXPIRATION_KEY: time.time() + 25}
     return orders
 
 
@@ -201,10 +242,10 @@ def getOrdersDifference(newOrders, oldOrders):
     added = {}
     removed = {}
     for k in newOrders:
-        if k not in oldOrders:
+        if k not in oldOrders or newOrders[k][ORDER_TYPE_KEY] != oldOrders[k][ORDER_TYPE_KEY]:
             added[k] = newOrders[k]
     for k in oldOrders:
-        if k not in newOrders:
+        if k not in newOrders or oldOrders[k][ORDER_TYPE_KEY] != newOrders[k][ORDER_TYPE_KEY]:
             removed[k] = oldOrders[k]
 
     return added, removed
@@ -251,7 +292,7 @@ def orderIngredient(ingredient):
 
         pyautogui.click(RICE2_COORDS, duration=0.25)
         pyautogui.click(NORMAL_DELIVERY_BUTTON_COORDS, duration=0.25)
-        ORDERING_COMPLETE[RICE] = time.time() + 6
+        ORDERING_COMPLETE[RICE] = time.time() + NORMAL_RESTOCK_TIME
         logging.debug('Ordered more %s' % (RICE))
         return
     elif ORDERING_COMPLETE[ingredient] is None:
@@ -265,7 +306,7 @@ def orderIngredient(ingredient):
 
         pyautogui.click(ORDER_BUTTON_COORDS[ingredient], duration=0.25)
         pyautogui.click(NORMAL_DELIVERY_BUTTON_COORDS, duration=0.25)
-        ORDERING_COMPLETE[ingredient] = time.time() + 6
+        ORDERING_COMPLETE[ingredient] = time.time() + NORMAL_RESTOCK_TIME
         logging.debug('Ordered more %s' % (ingredient))
         return
 
@@ -282,14 +323,10 @@ def updateInventory():
             elif ingredient in (NORI, ROE, RICE):
                 INVENTORY[ingredient] += 10
             logging.debug('Updated inventory with added %s.' % (ingredient))
-            pyautogui.screenshot('%s_%sshrimp_%srice_%snori_%sroe_%ssalmon_%sunagi.png' % (int(time.time()), INVENTORY[SHRIMP], INVENTORY[RICE], INVENTORY[NORI], INVENTORY[ROE], INVENTORY[SALMON], INVENTORY[UNAGI]), region=(GAME_REGION[0] + 11, GAME_REGION[1] + 304, 110, 170))
+            #pyautogui.screenshot('%s_%sshrimp_%srice_%snori_%sroe_%ssalmon_%sunagi.png' % (int(time.time()), INVENTORY[SHRIMP], INVENTORY[RICE], INVENTORY[NORI], INVENTORY[ROE], INVENTORY[SALMON], INVENTORY[UNAGI]), region=(GAME_REGION[0] + 11, GAME_REGION[1] + 304, 110, 170))
             logging.debug('Assumed inventory: %s' % (pprint.pprint(INVENTORY)))
 
 
-def checkForGameOver():
-    if pyautogui.locateOnScreen(imPath('failed_screen.png'), region=GAME_REGION) is not None:
-        logging.debug('Game over detected. Quitting.')
-        sys.exit()
 
 
 if __name__ == '__main__':
