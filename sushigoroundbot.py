@@ -4,7 +4,8 @@
 
 import pyautogui, time, os, logging, sys, random, copy
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d: %(message)s', datefmt='%H:%M:%S')
+
 
 pyautogui.pyscreeze.GRAYSCALE_DEFAULT = True
 
@@ -16,7 +17,8 @@ SALMON_ROLL = 'salmon_roll'
 SHRIMP_SUSHI = 'shrimp_sushi'
 UNAGI_ROLL = 'unagi_roll'
 DRAGON_ROLL = 'dragon_roll'
-ALL_ORDER_TYPES = (ONIGIRI, GUNKAN_MAKI, CALIFORNIA_ROLL, SALMON_ROLL, SHRIMP_SUSHI, UNAGI_ROLL, DRAGON_ROLL)
+COMBO = 'combo'
+ALL_ORDER_TYPES = (ONIGIRI, GUNKAN_MAKI, CALIFORNIA_ROLL, SALMON_ROLL, SHRIMP_SUSHI, UNAGI_ROLL, DRAGON_ROLL, COMBO)
 
 # ingredient constants (don't change these: the image filenames depend on these specific values)
 SHRIMP = 'shrimp'
@@ -29,6 +31,7 @@ UNAGI = 'unagi'
 MIN_INGREDIENTS = 4 # if an ingredient gets below this value, order more.
 PLATE_CLEARING_FREQ = 8 # plates are cleared roughly ever this number of seconds at least
 NORMAL_RESTOCK_TIME = 7 # the number of seconds it takes to restock inventory after ordering it (at normal speed, not express)
+TIME_TO_REMAKE = 30
 
 # inventory constant
 INVENTORY = {SHRIMP: 5, RICE: 10,
@@ -40,11 +43,12 @@ RECIPE = {ONIGIRI:         {RICE: 2, NORI: 1},
           SALMON_ROLL:     {RICE: 1, NORI: 1, SALMON: 2},
           SHRIMP_SUSHI:    {RICE: 1, NORI: 1, SHRIMP: 2},
           UNAGI_ROLL:      {RICE: 1, NORI: 1, UNAGI: 2},
-          DRAGON_ROLL:     {RICE: 2, NORI: 1, ROE: 1, UNAGI: 2},}
+          DRAGON_ROLL:     {RICE: 2, NORI: 1, ROE: 1, UNAGI: 2},
+          COMBO:           {RICE: 2, NORI: 1, ROE: 1, SALMON: 1, UNAGI: 1, SHRIMP: 1},}
 
 GAME_REGION = ()
 ORDERING_COMPLETE = {SHRIMP: None, RICE: None, NORI: None, ROE: None, SALMON: None, UNAGI: None}
-ROLLING_COMPLETE = 0 # the unix timestamp when the current order being made will be done and a new order can start
+ROLLING_COMPLETE = 0
 LAST_PLATE_CLEARING = 0 # the unix timestamp of the last time the plates were cleared
 LAST_GAME_OVER_CHECK = 0 # the unix timestamp when we last checked for the Game Over or You Win messages
 
@@ -143,40 +147,64 @@ def navigateStartGameMenu():
 
 
 def startServing():
-    global LAST_GAME_OVER_CHECK, INVENTORY
-    orders = {}
+    global LAST_GAME_OVER_CHECK, INVENTORY, ORDERING_COMPLETE
+
+    # Reset all game state variables.
+    oldOrders = {}
     backOrders = {}
+    remakeOrders = {}
+    remakeTimes = {}
     LAST_GAME_OVER_CHECK = time.time()
+    ORDERING_COMPLETE = {SHRIMP: None, RICE: None, NORI: None,
+                         ROE: None, SALMON: None, UNAGI: None}
 
     while True:
-        newestOrders = getOrders()
-        added, removed = getOrdersDifference(newestOrders, orders)
+        # Check for orders, see which are new and which are gone since last time.
+        currentOrders = getOrders()
+        added, removed = getOrdersDifference(currentOrders, oldOrders)
         if added != {}:
             logging.debug('New orders: %s' % (list(added.values())))
+            for k in added:
+                remakeTimes[k] = time.time() + TIME_TO_REMAKE
         if removed != {}:
             logging.debug('Removed orders: %s' % (list(removed.values())))
-        orders = newestOrders
+            for k in removed:
+                del remakeTimes[k]
+
+        for k, remakeTime in copy.copy(remakeTimes).items():
+            if time.time() > remakeTime:
+                remakeTimes[k] = time.time() + TIME_TO_REMAKE # reset remake time
+                remakeOrders[k] = currentOrders[k]
+                logging.debug('%s added to remake orders.' % (currentOrders[k]))
+
 
         for pos, order in added.items():
             result = makeOrder(order)
             if result is not None:
                 orderIngredient(result)
                 backOrders[pos] = order
+                logging.debug('Ingredients for %s not available. Putting on back order.' % (order))
 
         if random.randint(1, 10) == 1 or time.time() - PLATE_CLEARING_FREQ > LAST_PLATE_CLEARING:
             clickOnPlates()
         updateInventory()
 
         # Go through and see if any back orders can be filled.
-        backOrdersCopy = copy.copy(backOrders)
-        for pos, order in backOrdersCopy.items():
+        for pos, order in copy.copy(backOrders).items():
             result = makeOrder(order)
             if result is None:
                 del backOrders[pos] # remove from back orders
                 logging.debug('Filled back order for %s.' % (order))
 
-        if random.randint(1, 10) == 1:
-            checkForGameOver()
+        # Go through and see if any remake orders can be filled.
+        for pos, order in copy.copy(remakeOrders).items():
+            result = makeOrder(order)
+            if result is None:
+                del remakeOrders[pos] # remove from remake orders
+                logging.debug('Filled remake order for %s.' % (order))
+
+        #if random.randint(1, 10) == 1:
+        #    checkForGameOver()
         if random.randint(1, 5) == 1:
             orderIngredientsIfNeeded()
 
@@ -187,10 +215,16 @@ def startServing():
                 INVENTORY = {SHRIMP: 5, RICE: 10,
                              NORI: 10, ROE: 10,
                              SALMON: 5, UNAGI: 5}
+                ORDERING_COMPLETE = {SHRIMP: None, RICE: None,
+                                     NORI: None, ROE: None,
+                                     SALMON: None, UNAGI: None}
                 backOrders = {}
-                orders = {}
+                remakeOrders = {}
+                currentOrders = {}
+                oldOrders = {}
 
                 logging.debug('Level complete.')
+                time.sleep(15) # give another 15 seconds to tally score
 
                 # Click buttons to continue to next level.
                 pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
@@ -200,6 +234,11 @@ def startServing():
                 pyautogui.click(pos, duration=0.25)
                 logging.debug('Clicked on Continue button.')
 
+        oldOrders = currentOrders
+
+        #startTime = time.time()
+        #findAndClickBadFood()
+        #print('bad food: %s' % (round(time.time() - startTime, 2)))
 
 def checkForGameOver():
     # check for "You Win" message
@@ -246,7 +285,10 @@ def getOrdersDifference(newOrders, oldOrders):
 def makeOrder(orderType):
     global ROLLING_COMPLETE, INGRED_COORDS, INVENTORY
 
-    while time.time() < ROLLING_COMPLETE:
+    pyautogui.locateOnScreen(imPath('clear_mat.png'), region=(GAME_REGION[0] + 115, GAME_REGION[1] + 295, 220, 175))
+
+    # wait until the mat is clear. The previous order could still be there if the conveyor belt has been full or the mat is currently rolling.
+    while time.time() < ROLLING_COMPLETE and pyautogui.locateOnScreen(imPath('clear_mat.png'), region=(GAME_REGION[0] + 128, GAME_REGION[1] + 304, 152, 163)) is None:
         time.sleep(0.1)
 
     for ingredient, amount in RECIPE[orderType].items():
@@ -315,7 +357,14 @@ def updateInventory():
             elif ingredient in (NORI, ROE, RICE):
                 INVENTORY[ingredient] += 10
             logging.debug('Updated inventory with added %s.' % (ingredient))
+            logging.debug('Inv: %s' % INVENTORY)
             #pyautogui.screenshot('%s_%sshrimp_%srice_%snori_%sroe_%ssalmon_%sunagi.png' % (int(time.time()), INVENTORY[SHRIMP], INVENTORY[RICE], INVENTORY[NORI], INVENTORY[ROE], INVENTORY[SALMON], INVENTORY[UNAGI]), region=(GAME_REGION[0] + 11, GAME_REGION[1] + 304, 110, 170))
+
+def findAndClickBadFood():
+    result = pyautogui.locateCenterOnScreen(imPath('bad_food.png'), region=(GAME_REGION[0] + 337, GAME_REGION[1] + 296, 66, 189))
+    if result is not None:
+        pyautogui.click(result)
+        logging.debug('Clicked on bad food at X: %s Y: %s' % (result[0], result[1]))
 
 
 if __name__ == '__main__':
