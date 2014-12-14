@@ -2,7 +2,7 @@
 
 # TODO - Expired back order not working.
 
-import pyautogui, time, os, logging, sys, random, pprint, copy
+import pyautogui, time, os, logging, sys, random, copy
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -14,7 +14,9 @@ GUNKAN_MAKI = 'gunkan_maki'
 CALIFORNIA_ROLL = 'california_roll'
 SALMON_ROLL = 'salmon_roll'
 SHRIMP_SUSHI = 'shrimp_sushi'
-ALL_ORDER_TYPES = (ONIGIRI, GUNKAN_MAKI, CALIFORNIA_ROLL, SALMON_ROLL, SHRIMP_SUSHI)
+UNAGI_ROLL = 'unagi_roll'
+DRAGON_ROLL = 'dragon_roll'
+ALL_ORDER_TYPES = (ONIGIRI, GUNKAN_MAKI, CALIFORNIA_ROLL, SALMON_ROLL, SHRIMP_SUSHI, UNAGI_ROLL, DRAGON_ROLL)
 
 # ingredient constants (don't change these: the image filenames depend on these specific values)
 SHRIMP = 'shrimp'
@@ -23,9 +25,6 @@ NORI = 'nori'
 ROE = 'roe'
 SALMON = 'salmon'
 UNAGI = 'unagi'
-
-ORDER_TYPE_KEY = 'orderKey'
-EXPIRATION_KEY = 'expirationKey'
 
 MIN_INGREDIENTS = 4 # if an ingredient gets below this value, order more.
 PLATE_CLEARING_FREQ = 8 # plates are cleared roughly ever this number of seconds at least
@@ -39,7 +38,9 @@ RECIPE = {ONIGIRI:         {RICE: 2, NORI: 1},
           CALIFORNIA_ROLL: {RICE: 1, NORI: 1, ROE: 1},
           GUNKAN_MAKI:     {RICE: 1, NORI: 1, ROE: 2},
           SALMON_ROLL:     {RICE: 1, NORI: 1, SALMON: 2},
-          SHRIMP_SUSHI:    {RICE: 1, NORI: 1, SHRIMP: 2},}
+          SHRIMP_SUSHI:    {RICE: 1, NORI: 1, SHRIMP: 2},
+          UNAGI_ROLL:      {RICE: 1, NORI: 1, UNAGI: 2},
+          DRAGON_ROLL:     {RICE: 2, NORI: 1, ROE: 1, UNAGI: 2},}
 
 GAME_REGION = ()
 ORDERING_COMPLETE = {SHRIMP: None, RICE: None, NORI: None, ROE: None, SALMON: None, UNAGI: None}
@@ -151,25 +152,16 @@ def startServing():
         newestOrders = getOrders()
         added, removed = getOrdersDifference(newestOrders, orders)
         if added != {}:
-            logging.debug('New orders: %s' % (added))
+            logging.debug('New orders: %s' % (list(added.values())))
         if removed != {}:
-            logging.debug('Removed orders: %s' % (removed))
+            logging.debug('Removed orders: %s' % (list(removed.values())))
         orders = newestOrders
 
-        for pos, orderValue in added.items():
-            order = orderValue[ORDER_TYPE_KEY]
+        for pos, order in added.items():
             result = makeOrder(order)
             if result is not None:
                 orderIngredient(result)
                 backOrders[pos] = order
-
-        # See if any expired orders need to be remade
-        for pos, orderValue in orders.items():
-            order = orderValue[ORDER_TYPE_KEY]
-            expiration = orderValue[EXPIRATION_KEY]
-            if time.time() > expiration:
-                backOrders[pos] = order
-                logging.debug('Expired order detected. Adding %s to back orders.' % (order))
 
         if random.randint(1, 10) == 1 or time.time() - PLATE_CLEARING_FREQ > LAST_PLATE_CLEARING:
             clickOnPlates()
@@ -234,7 +226,7 @@ def getOrders():
     for orderType in (ALL_ORDER_TYPES):
         allOrders = pyautogui.locateAllOnScreen(imPath('%s_order.png' % orderType), region=(GAME_REGION[0] + 32, GAME_REGION[1] + 46, 558, 44))
         for order in allOrders:
-            orders[order] = {ORDER_TYPE_KEY: orderType, EXPIRATION_KEY: time.time() + 25}
+            orders[order] = orderType
     return orders
 
 
@@ -242,10 +234,10 @@ def getOrdersDifference(newOrders, oldOrders):
     added = {}
     removed = {}
     for k in newOrders:
-        if k not in oldOrders or newOrders[k][ORDER_TYPE_KEY] != oldOrders[k][ORDER_TYPE_KEY]:
+        if k not in oldOrders:
             added[k] = newOrders[k]
     for k in oldOrders:
-        if k not in newOrders or oldOrders[k][ORDER_TYPE_KEY] != newOrders[k][ORDER_TYPE_KEY]:
+        if k not in newOrders:
             removed[k] = oldOrders[k]
 
     return added, removed
@@ -324,9 +316,6 @@ def updateInventory():
                 INVENTORY[ingredient] += 10
             logging.debug('Updated inventory with added %s.' % (ingredient))
             #pyautogui.screenshot('%s_%sshrimp_%srice_%snori_%sroe_%ssalmon_%sunagi.png' % (int(time.time()), INVENTORY[SHRIMP], INVENTORY[RICE], INVENTORY[NORI], INVENTORY[ROE], INVENTORY[SALMON], INVENTORY[UNAGI]), region=(GAME_REGION[0] + 11, GAME_REGION[1] + 304, 110, 170))
-            logging.debug('Assumed inventory: %s' % (pprint.pprint(INVENTORY)))
-
-
 
 
 if __name__ == '__main__':
