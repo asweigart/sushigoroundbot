@@ -32,6 +32,7 @@ MIN_INGREDIENTS = 4 # if an ingredient gets below this value, order more.
 PLATE_CLEARING_FREQ = 8 # plates are cleared roughly ever this number of seconds at least
 NORMAL_RESTOCK_TIME = 7 # the number of seconds it takes to restock inventory after ordering it (at normal speed, not express)
 TIME_TO_REMAKE = 30
+LEVEL = 1
 
 # inventory constant
 INVENTORY = {SHRIMP: 5, RICE: 10,
@@ -60,7 +61,7 @@ RICE1_COORDS = None
 RICE2_COORDS = None
 NORMAL_DELIVERY_BUTTON_COORDS = None
 MAT_COORDS = None
-
+LEVEL_WIN_MESSAGE = 'win'
 
 def main():
     logging.debug('Program Started. Press Ctrl-C to abort at any time.')
@@ -76,7 +77,7 @@ def imPath(filename):
 
 
 def setupCoordinates():
-    global INGRED_COORDS, PHONE_COORDS, TOPPING_COORDS, ORDER_BUTTON_COORDS, RICE1_COORDS, RICE2_COORDS, NORMAL_DELIVERY_BUTTON_COORDS, MAT_COORDS
+    global INGRED_COORDS, PHONE_COORDS, TOPPING_COORDS, ORDER_BUTTON_COORDS, RICE1_COORDS, RICE2_COORDS, NORMAL_DELIVERY_BUTTON_COORDS, MAT_COORDS, LEVEL
     INGRED_COORDS = {SHRIMP: (GAME_REGION[0] + 40, GAME_REGION[1] + 335),
                      RICE:   (GAME_REGION[0] + 95, GAME_REGION[1] + 335),
                      NORI:   (GAME_REGION[0] + 40, GAME_REGION[1] + 385),
@@ -96,6 +97,8 @@ def setupCoordinates():
     NORMAL_DELIVERY_BUTTON_COORDS = (GAME_REGION[0] + 495, GAME_REGION[1] + 293)
 
     MAT_COORDS = (GAME_REGION[0] + 190, GAME_REGION[1] + 375)
+
+    LEVEL = 1
 
 
 def getGameRegion():
@@ -147,7 +150,7 @@ def navigateStartGameMenu():
 
 
 def startServing():
-    global LAST_GAME_OVER_CHECK, INVENTORY, ORDERING_COMPLETE
+    global LAST_GAME_OVER_CHECK, INVENTORY, ORDERING_COMPLETE, LEVEL
 
     # Reset all game state variables.
     oldOrders = {}
@@ -198,19 +201,21 @@ def startServing():
 
         # Go through and see if any remake orders can be filled.
         for pos, order in copy.copy(remakeOrders).items():
+            if pos not in currentOrders:
+                del remakeOrders[pos]
+                logging.debug('Canceled remake order for %s.' % (order))
+                continue
             result = makeOrder(order)
             if result is None:
                 del remakeOrders[pos] # remove from remake orders
                 logging.debug('Filled remake order for %s.' % (order))
 
-        #if random.randint(1, 10) == 1:
-        #    checkForGameOver()
         if random.randint(1, 5) == 1:
             orderIngredientsIfNeeded()
 
         if time.time() - 12 > LAST_GAME_OVER_CHECK:
             result = checkForGameOver()
-            if result == 'win':
+            if result == LEVEL_WIN_MESSAGE:
                 # Reset inventory and orders.
                 INVENTORY = {SHRIMP: 5, RICE: 10,
                              NORI: 10, ROE: 10,
@@ -223,8 +228,9 @@ def startServing():
                 currentOrders = {}
                 oldOrders = {}
 
-                logging.debug('Level complete.')
-                time.sleep(15) # give another 15 seconds to tally score
+                logging.debug('Level %s complete.' % (LEVEL))
+                LEVEL += 1
+                time.sleep(5) # give another 5 seconds to tally score
 
                 # Click buttons to continue to next level.
                 pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
@@ -244,7 +250,8 @@ def checkForGameOver():
     # check for "You Win" message
     result = pyautogui.locateOnScreen(imPath('you_win.png'), region=(GAME_REGION[0] + 188, GAME_REGION[1] + 94, 262, 60))
     if result is not None:
-        return 'win'
+        pyautogui.click(pyautogui.center(result))
+        return LEVEL_WIN_MESSAGE
 
     result = pyautogui.locateOnScreen(imPath('you_failed.png'), region=(GAME_REGION[0] + 167, GAME_REGION[1] + 133, 314, 39))
     if result is not None:
@@ -285,10 +292,8 @@ def getOrdersDifference(newOrders, oldOrders):
 def makeOrder(orderType):
     global ROLLING_COMPLETE, INGRED_COORDS, INVENTORY
 
-    pyautogui.locateOnScreen(imPath('clear_mat.png'), region=(GAME_REGION[0] + 115, GAME_REGION[1] + 295, 220, 175))
-
     # wait until the mat is clear. The previous order could still be there if the conveyor belt has been full or the mat is currently rolling.
-    while time.time() < ROLLING_COMPLETE and pyautogui.locateOnScreen(imPath('clear_mat.png'), region=(GAME_REGION[0] + 128, GAME_REGION[1] + 304, 152, 163)) is None:
+    while time.time() < ROLLING_COMPLETE and pyautogui.locateOnScreen(imPath('clear_mat.png'), region=(GAME_REGION[0] + 115, GAME_REGION[1] + 295, 220, 175)) is None:
         time.sleep(0.1)
 
     for ingredient, amount in RECIPE[orderType].items():
@@ -300,6 +305,7 @@ def makeOrder(orderType):
         for i in range(amount):
             pyautogui.click(INGRED_COORDS[ingredient], duration=0.25)
             INVENTORY[ingredient] -= 1
+    findAndClickPlatesOnBelt() # get rid of any left over meals on the conveyor belt
     pyautogui.click(MAT_COORDS, duration=0.25)
     logging.debug('Made a %s order.' % (orderType))
     ROLLING_COMPLETE = time.time() + 1.5
@@ -360,12 +366,13 @@ def updateInventory():
             logging.debug('Inv: %s' % INVENTORY)
             #pyautogui.screenshot('%s_%sshrimp_%srice_%snori_%sroe_%ssalmon_%sunagi.png' % (int(time.time()), INVENTORY[SHRIMP], INVENTORY[RICE], INVENTORY[NORI], INVENTORY[ROE], INVENTORY[SALMON], INVENTORY[UNAGI]), region=(GAME_REGION[0] + 11, GAME_REGION[1] + 304, 110, 170))
 
-def findAndClickBadFood():
-    result = pyautogui.locateCenterOnScreen(imPath('bad_food.png'), region=(GAME_REGION[0] + 337, GAME_REGION[1] + 296, 66, 189))
-    if result is not None:
-        pyautogui.click(result)
-        logging.debug('Clicked on bad food at X: %s Y: %s' % (result[0], result[1]))
 
+def findAndClickPlatesOnBelt():
+    for color in ('pink', 'blue', 'red'):
+        result = pyautogui.locateCenterOnScreen(imPath('%s_plate_color.png' % (color)), region=(GAME_REGION[0] + 343, GAME_REGION[1] + 300, 50, 100))
+        if result is not None:
+            pyautogui.click(result)
+            logging.debug('Clicked on %s plate on belt at X: %s Y: %s' % (color, result[0], result[1]))
 
 if __name__ == '__main__':
     main()
