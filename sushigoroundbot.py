@@ -10,8 +10,6 @@ import pyautogui, time, os, logging, sys, random, copy
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d: %(message)s', datefmt='%H:%M:%S')
 #logging.disable(logging.DEBUG) # uncomment to block debug log messages
 
-pyautogui.pyscreeze.GRAYSCALE_DEFAULT = True # use grayscale comparisons by default for improved performance
-
 # Food order constants (don't change these: the image filenames depend on these specific values)
 ONIGIRI = 'onigiri'
 GUNKAN_MAKI = 'gunkan_maki'
@@ -79,11 +77,6 @@ def main():
     startServing()
 
 
-def imPath(filename):
-    """A shortcut for joining the 'images/'' file path, since it is used so often. Returns the filename with 'images/' prepended."""
-    return os.path.join('images', filename)
-
-
 def setupCoordinates():
     """Sets several of the coordinate-related global variables, after acquiring the value for GAME_REGION."""
     global INGRED_COORDS, PHONE_COORDS, TOPPING_COORDS, ORDER_BUTTON_COORDS, RICE1_COORDS, RICE2_COORDS, NORMAL_DELIVERY_BUTTON_COORDS, MAT_COORDS, LEVEL
@@ -108,6 +101,11 @@ def setupCoordinates():
     MAT_COORDS = (GAME_REGION[0] + 190, GAME_REGION[1] + 375)
 
     LEVEL = 1
+
+
+def imPath(filename):
+    """A shortcut for joining the 'images/'' file path, since it is used so often. Returns the filename with 'images/' prepended."""
+    return os.path.join('images', filename)
 
 
 def getGameRegion():
@@ -267,26 +265,6 @@ def startServing():
         oldOrders = currentOrders
 
 
-def checkForGameOver():
-    """Checks the screen for the "You Win" or "You Fail" message.
-
-    On winning, returns the string in LEVEL_WIN_MESSAGE.
-
-    On losing, the program terminates."""
-
-    # check for "You Win" message
-    result = pyautogui.locateOnScreen(imPath('you_win.png'), region=(GAME_REGION[0] + 188, GAME_REGION[1] + 94, 262, 60))
-    if result is not None:
-        pyautogui.click(pyautogui.center(result))
-        return LEVEL_WIN_MESSAGE
-
-    # check for "You Fail" message
-    result = pyautogui.locateOnScreen(imPath('you_failed.png'), region=(GAME_REGION[0] + 167, GAME_REGION[1] + 133, 314, 39))
-    if result is not None:
-        logging.debug('Game over. Quitting.')
-        sys.exit()
-
-
 def clickOnPlates():
     """Clicks the mouse on the six places where finished plates will be flashing. This function does not check for flashing plates, but simply clicks on all six places.
 
@@ -363,6 +341,15 @@ def makeOrder(orderType):
     ROLLING_COMPLETE = time.time() + 1.5 # give the mat enough time (1.5 seconds) to finish rolling before being used again
 
 
+def findAndClickPlatesOnBelt():
+    """Find any plates on the conveyor belt that can be removed and click on them to remove them. This will get rid of excess orders."""
+    for color in ('pink', 'blue', 'red'):
+        result = pyautogui.locateCenterOnScreen(imPath('%s_plate_color.png' % (color)), region=(GAME_REGION[0] + 343, GAME_REGION[1] + 300, 50, 100))
+        if result is not None:
+            pyautogui.click(result)
+            logging.debug('Clicked on %s plate on belt at X: %s Y: %s' % (color, result[0], result[1]))
+
+
 def orderIngredient(ingredient):
     """Do the clicks to purchase an ingredient. If successful, the ORDERING_COMPLETE dictionary is updated for when the ingredients will arive and INVENTORY can be updated. (This is handled in the updateInventory() function.)"""
     logging.debug('Ordering more %s (inventory says %s left)...' % (ingredient, INVENTORY[ingredient]))
@@ -421,13 +408,24 @@ def updateInventory():
             logging.debug(INVENTORY)
 
 
-def findAndClickPlatesOnBelt():
-    """Find any plates on the conveyor belt that can be removed and click on them to remove them. This will get rid of excess orders."""
-    for color in ('pink', 'blue', 'red'):
-        result = pyautogui.locateCenterOnScreen(imPath('%s_plate_color.png' % (color)), region=(GAME_REGION[0] + 343, GAME_REGION[1] + 300, 50, 100))
-        if result is not None:
-            pyautogui.click(result)
-            logging.debug('Clicked on %s plate on belt at X: %s Y: %s' % (color, result[0], result[1]))
+def checkForGameOver():
+    """Checks the screen for the "You Win" or "You Fail" message.
+
+    On winning, returns the string in LEVEL_WIN_MESSAGE.
+
+    On losing, the program terminates."""
+
+    # check for "You Win" message
+    result = pyautogui.locateOnScreen(imPath('you_win.png'), region=(GAME_REGION[0] + 188, GAME_REGION[1] + 94, 262, 60))
+    if result is not None:
+        pyautogui.click(pyautogui.center(result))
+        return LEVEL_WIN_MESSAGE
+
+    # check for "You Fail" message
+    result = pyautogui.locateOnScreen(imPath('you_failed.png'), region=(GAME_REGION[0] + 167, GAME_REGION[1] + 133, 314, 39))
+    if result is not None:
+        logging.debug('Game over. Quitting.')
+        sys.exit()
 
 
 if __name__ == '__main__':

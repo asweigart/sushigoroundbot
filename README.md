@@ -10,3 +10,5 @@ Load the Sushi Go Round game in a browser. It is available at http://miniclip.co
 Run the program with the game fully visible. Do not move the browser window while the game is playing.
 
 To interrupt the program and regain control of the mouse, move the mouse to the top-left corner of your screen.
+
+A gameplay video of the bot in action can be seen at http://youtu.be/lfk_T6VKhTE
