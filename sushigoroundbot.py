@@ -50,13 +50,13 @@ LEVEL = 1 # current level being played
 INVENTORY = {SHRIMP: 5, RICE: 10,
              NORI: 10,  ROE: 10,
              SALMON: 5, UNAGI: 5}
-GAME_REGION = () # (left, top, width, height) values coordinates of the game window
 ORDERING_COMPLETE = {SHRIMP: None, RICE: None, NORI: None, ROE: None, SALMON: None, UNAGI: None} # unix timestamp when an ordered ingredient will have arrived
 ROLLING_COMPLETE = 0 # unix timestamp of when the rolling of the mat will have completed
 LAST_PLATE_CLEARING = 0 # unix timestamp of the last time the plates were cleared
 LAST_GAME_OVER_CHECK = 0 # unix timestamp when we last checked for the Game Over or You Win messages
 
-# series of coordinates set after the GAME_REGION has been identified
+# various coordinates of objects in the game
+GAME_REGION = () # (left, top, width, height) values coordinates of the entire game window
 INGRED_COORDS = None
 PHONE_COORDS = None
 TOPPING_COORDS = None
@@ -75,6 +75,28 @@ def main():
     navigateStartGameMenu()
     setupCoordinates()
     startServing()
+
+
+def imPath(filename):
+    """A shortcut for joining the 'images/'' file path, since it is used so often. Returns the filename with 'images/' prepended."""
+    return os.path.join('images', filename)
+
+
+def getGameRegion():
+    """Obtains the region that the Sushi Go Round game is on the screen and assigns it to GAME_REGION. The game must be at the start screen (where the PLAY button is visible)."""
+    global GAME_REGION
+
+    # identify the top-left corner
+    logging.debug('Finding game region...')
+    region = pyautogui.locateOnScreen(imPath('top_right_corner.png'))
+    if region is None:
+        raise Exception('Could not find game on screen. Is the game visible?')
+
+    # calculate the region of the entire game
+    topRightX = region[0] + region[2] # left + width
+    topRightY = region[1] # top
+    GAME_REGION = (topRightX - 640, topRightY, 640, 480) # the game screen is always 640 x 480
+    logging.debug('Game region found: %s' % (GAME_REGION,))
 
 
 def setupCoordinates():
@@ -101,28 +123,6 @@ def setupCoordinates():
     MAT_COORDS = (GAME_REGION[0] + 190, GAME_REGION[1] + 375)
 
     LEVEL = 1
-
-
-def imPath(filename):
-    """A shortcut for joining the 'images/'' file path, since it is used so often. Returns the filename with 'images/' prepended."""
-    return os.path.join('images', filename)
-
-
-def getGameRegion():
-    """Obtains the region that the Sushi Go Round game is on the screen and assigns it to GAME_REGION. The game must be at the start screen (where the PLAY button is visible)."""
-    global GAME_REGION
-
-    # identify the top-left corner
-    logging.debug('Finding game region...')
-    region = pyautogui.locateOnScreen(imPath('top_right_corner.png'))
-    if region is None:
-        raise Exception('Could not find game on screen. Is the game visible?')
-
-    # calculate the region of the entire game
-    topRightX = region[0] + region[2] # left + width
-    topRightY = region[1] # top
-    GAME_REGION = (topRightX - 640, topRightY, 640, 480) # the game screen is always 640 x 480
-    logging.debug('Game region found: %s' % (GAME_REGION,))
 
 
 def navigateStartGameMenu():
