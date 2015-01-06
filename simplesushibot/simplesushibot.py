@@ -30,35 +30,35 @@ winTop = window[1]
 print('Found game window at:', winLeft, winTop)
 
 # preprogram all the ingredient button coordinates
-shrimp = (35 + winLeft, 330 + winTop)
-nori   = (35 + winLeft, 380 + winTop)
-salmon = (35 + winLeft, 430 + winTop)
-rice   = (90 + winLeft, 330 + winTop)
-roe    = (90 + winLeft, 380 + winTop)
-unagi  = (90 + winLeft, 430 + winTop)
-mat    = (200 + winLeft, 400 + winTop)
+shrimp = [35 + winLeft, 330 + winTop]
+nori   = [35 + winLeft, 380 + winTop]
+salmon = [35 + winLeft, 430 + winTop]
+rice   = [90 + winLeft, 330 + winTop]
+roe    = [90 + winLeft, 380 + winTop]
+unagi  = [90 + winLeft, 430 + winTop]
+mat    = [200 + winLeft, 400 + winTop]
 
 # preprogram phone coordinates
-phone            = (550 + winLeft, 350 + winTop)
-rice1Button      = (500 + winLeft, 290 + winTop)
-rice2Button      = (550 + winLeft, 300 + winTop)
-toppingButton    = (500 + winLeft, 270 + winTop)
-ingredButtons = {'1': (500 + winLeft, 220 + winTop), # shrimp
-                 '3': (500 + winLeft, 270 + winTop), # nori
-                 '5': (500 + winLeft, 320 + winTop), # salmon
-                 '4': (550 + winLeft, 270 + winTop), # roe
-                 '6': (550 + winLeft, 220 + winTop)} # unagi
-cancelButton     = (580 + winLeft, 330 + winTop)
-deliveryButton   = (500 + winLeft, 300 + winTop)
-phoneRegion      = (440 + winLeft, 190 + winTop, 200, 200)
+phone            = [550 + winLeft, 350 + winTop]
+rice1Button      = [500 + winLeft, 290 + winTop]
+rice2Button      = [550 + winLeft, 300 + winTop]
+toppingButton    = [500 + winLeft, 270 + winTop]
+ingredButtons = {'1': [500 + winLeft, 220 + winTop], # shrimp
+                 '3': [500 + winLeft, 270 + winTop], # nori
+                 '5': [500 + winLeft, 320 + winTop], # salmon
+                 '4': [550 + winLeft, 270 + winTop], # roe
+                 '6': [550 + winLeft, 220 + winTop]} # unagi
+cancelButton     = [580 + winLeft, 330 + winTop]
+deliveryButton   = [500 + winLeft, 300 + winTop]
+phoneRegion      = [440 + winLeft, 190 + winTop, 200, 200]
 
 
 # navigate through start screen
-pyautogui.click(320 + winLeft, 200 + winTop) # click on Play button
-pyautogui.click(300 + winLeft, 380 + winTop) # click on Continue button
-pyautogui.click(550 + winLeft, 450 + winTop) # click on Skip
-pyautogui.click(300 + winLeft, 380 + winTop) # click on Continue button
-pyautogui.click(botWindow) # click back on bot window
+pyautogui.click[320 + winLeft, 200 + winTop] # click on Play button
+pyautogui.click[300 + winLeft, 380 + winTop] # click on Continue button
+pyautogui.click[550 + winLeft, 450 + winTop] # click on Skip
+pyautogui.click[300 + winLeft, 380 + winTop] # click on Continue button
+pyautogui.click[botWindow] # click back on bot window
 
 def clickIngredients(coordinates):
     # click on all the coordinates in the coordinates list, then click the mat
@@ -79,11 +79,11 @@ while True:
     if command == '':
         # read screen for all orders and display them
         print('CURRENT ORDERS: (press Enter to re-scan)')
-        for foodImage in ('onigiri_order.png', 'california_roll_order.png',
+        for foodImage in ['onigiri_order.png', 'california_roll_order.png',
                           'gunkan_maki_order.png', 'salmon_roll_order.png',
                           'shrimp_sushi_order.png', 'unagi_roll_order.png',
-                          'dragon_roll_order.png', 'combo_order.png'):
-            numOrders = len(list(pyautogui.locateAllOnScreen(foodImage, region=(20 + winLeft, 40 + winTop, 580, 60))))
+                          'dragon_roll_order.png', 'combo_order.png']:
+            numOrders = len(list(pyautogui.locateAllOnScreen(foodImage, region=[20 + winLeft, 40 + winTop, 580, 60])))
             if numOrders > 0:
                 # only display amount of orders if there are any
                 print(foodImage[:3], numOrders)
