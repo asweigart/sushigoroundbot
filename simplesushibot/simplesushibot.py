@@ -1,4 +1,14 @@
-    # A simpler version of the Sushi Go Round bot made for the NCSS 2015 Summer Camp
+#! python3
+# A simpler version of the Sushi Go Round bot made for the NCSS 2015 Summer Camp
+
+# To use this program, have the Sushi Go Round game at the starting screen.
+# At the > prompt, enter the first three letters of an order to make it
+# (oni, gun, cal, etc.) or enter a number 1-6 to order new ingredients.
+#   1-shrimp    2-rice
+#   3-nori      4-roe
+#   5-salmon    6-unagi
+
+# Entering nothing will clear plates and re-scan for orders.
 
 import pyautogui, sys, time
 
@@ -60,6 +70,7 @@ def clearPlates():
     # clear the plates
     for platex in range(80, 581, 100):
         pyautogui.click(platex + windowLeft, 200 + windowTop)
+    pyautogui.click(botWindow) # put bot window back into focus
 
 response = ''
 while True:
@@ -71,7 +82,8 @@ while True:
                           'shrimp_sushi_order.png', 'unagi_roll_order.png',
                           'dragon_roll_order.png', 'combo_order.png'):
             numOrders = len(list(pyautogui.locateAllOnScreen(foodImage, region=(20 + windowLeft, 40 + windowTop, 580, 60))))
-            print(foodImage[:3], numOrders)
+            if numOrders > 0:
+                print(foodImage[:3], numOrders)
         print('==================')
 
     # get the user's action
@@ -119,9 +131,6 @@ while True:
             clickIngredients([rice, rice, nori, roe, salmon, unagi, shrimp])
 
         clearPlates()
-
-        # put bot window back into focus
-        pyautogui.click(botWindow)
         time.sleep(1.5) # mat rolling takes 1.5 seconds to complete
 
 
@@ -162,5 +171,4 @@ while True:
                 pyautogui.click(ingredButtons[ingred])
                 pyautogui.click(deliveryButton)
 
-        # put bot window back into focus
-        pyautogui.click(botWindow)
+        clearPlates()
