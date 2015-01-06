@@ -24,40 +24,40 @@ window = pyautogui.locateOnScreen('top_left_corner.png')
 if window is None:
     sys.exit('Could not find game on screen. Is the game visible?')
 
-windowLeft = window[0]
-windowTop = window[1]
+winLeft = window[0]
+winTop = window[1]
 
-print('Found game window at:', windowLeft, windowTop)
+print('Found game window at:', winLeft, winTop)
 
 # preprogram all the ingredient button coordinates
-shrimp = (35 + windowLeft, 330 + windowTop)
-nori   = (35 + windowLeft, 380 + windowTop)
-salmon = (35 + windowLeft, 430 + windowTop)
-rice   = (90 + windowLeft, 330 + windowTop)
-roe    = (90 + windowLeft, 380 + windowTop)
-unagi  = (90 + windowLeft, 430 + windowTop)
-mat    = (200 + windowLeft, 400 + windowTop)
+shrimp = (35 + winLeft, 330 + winTop)
+nori   = (35 + winLeft, 380 + winTop)
+salmon = (35 + winLeft, 430 + winTop)
+rice   = (90 + winLeft, 330 + winTop)
+roe    = (90 + winLeft, 380 + winTop)
+unagi  = (90 + winLeft, 430 + winTop)
+mat    = (200 + winLeft, 400 + winTop)
 
 # preprogram phone coordinates
-phone            = (550 + windowLeft, 350 + windowTop)
-rice1Button      = (500 + windowLeft, 290 + windowTop)
-rice2Button      = (550 + windowLeft, 300 + windowTop)
-toppingButton    = (500 + windowLeft, 270 + windowTop)
-ingredButtons = {'1': (500 + windowLeft, 220 + windowTop), # shrimp
-                 '3': (500 + windowLeft, 270 + windowTop), # nori
-                 '5': (500 + windowLeft, 320 + windowTop), # salmon
-                 '4': (550 + windowLeft, 270 + windowTop), # roe
-                 '6': (550 + windowLeft, 220 + windowTop)} # unagi
-cancelButton     = (580 + windowLeft, 330 + windowTop)
-deliveryButton   = (500 + windowLeft, 300 + windowTop)
-phoneRegion      = (440 + windowLeft, 190 + windowTop, 200, 200)
+phone            = (550 + winLeft, 350 + winTop)
+rice1Button      = (500 + winLeft, 290 + winTop)
+rice2Button      = (550 + winLeft, 300 + winTop)
+toppingButton    = (500 + winLeft, 270 + winTop)
+ingredButtons = {'1': (500 + winLeft, 220 + winTop), # shrimp
+                 '3': (500 + winLeft, 270 + winTop), # nori
+                 '5': (500 + winLeft, 320 + winTop), # salmon
+                 '4': (550 + winLeft, 270 + winTop), # roe
+                 '6': (550 + winLeft, 220 + winTop)} # unagi
+cancelButton     = (580 + winLeft, 330 + winTop)
+deliveryButton   = (500 + winLeft, 300 + winTop)
+phoneRegion      = (440 + winLeft, 190 + winTop, 200, 200)
 
 
 # navigate through start screen
-pyautogui.click(320 + windowLeft, 200 + windowTop) # click on Play button
-pyautogui.click(300 + windowLeft, 380 + windowTop) # click on Continue button
-pyautogui.click(550 + windowLeft, 450 + windowTop) # click on Skip
-pyautogui.click(300 + windowLeft, 380 + windowTop) # click on Continue button
+pyautogui.click(320 + winLeft, 200 + winTop) # click on Play button
+pyautogui.click(300 + winLeft, 380 + winTop) # click on Continue button
+pyautogui.click(550 + winLeft, 450 + winTop) # click on Skip
+pyautogui.click(300 + winLeft, 380 + winTop) # click on Continue button
 pyautogui.click(botWindow) # click back on bot window
 
 def clickIngredients(coordinates):
@@ -69,7 +69,7 @@ def clickIngredients(coordinates):
 def clearPlates():
     # clear the plates by clicking on them
     for platex in range(80, 581, 100):
-        pyautogui.click(platex + windowLeft, 200 + windowTop)
+        pyautogui.click(platex + winLeft, 200 + winTop)
     pyautogui.click(botWindow) # put bot window back into focus
 
 # The main program loop will constantly ask the user for a command until
@@ -83,7 +83,7 @@ while True:
                           'gunkan_maki_order.png', 'salmon_roll_order.png',
                           'shrimp_sushi_order.png', 'unagi_roll_order.png',
                           'dragon_roll_order.png', 'combo_order.png'):
-            numOrders = len(list(pyautogui.locateAllOnScreen(foodImage, region=(20 + windowLeft, 40 + windowTop, 580, 60))))
+            numOrders = len(list(pyautogui.locateAllOnScreen(foodImage, region=(20 + winLeft, 40 + winTop, 580, 60))))
             if numOrders > 0:
                 # only display amount of orders if there are any
                 print(foodImage[:3], numOrders)
