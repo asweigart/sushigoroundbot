@@ -56,12 +56,10 @@ def clickIngredients(coordinates):
         pyautogui.click(c)
     pyautogui.click(mat)
 
-shrimpAmt = 5
-riceAmt = 10
-noriAmt = 10
-roeAmt = 10
-salmonAmt = 5
-unagiAmt = 5
+def clearPlates():
+    # clear the plates
+    for platex in range(80, 581, 100):
+        pyautogui.click(platex + windowLeft, 200 + windowTop)
 
 response = ''
 while True:
@@ -83,79 +81,52 @@ while True:
         sys.exit() # exit program
 
     if response == '':
+        clearPlates()
         continue # go back to start of loop
 
-    if not response.isDigit(): # command is to create an order
+    if not response.isdigit(): # command is to create an order
         if response[:3] == 'oni':
             # create an onigiri order
             print('Making onigiri...')
             clickIngredients([rice, rice, nori])
-            riceAmt -= 2
-            noriAmt -= 1
         if response[:3] == 'cal':
             # create a california roll order
             print('Making onigiri...')
             clickIngredients([rice, nori, roe])
-            riceAmt -= 1
-            noriAmt -= 1
-            roeAmt -= 1
         if response[:3] == 'gun':
             # create a gunkan maki order
             print('Making gunkan maki...')
             clickIngredients([rice, nori, roe, roe])
-            riceAmt -= 1
-            noriAmt -= 1
-            roeAmt -= 2
         if response[:3] == 'sal':
             # create a salmon roll order
             print('Making salmon...')
             clickIngredients([rice, nori, salmon, salmon])
-            riceAmt -= 1
-            noriAmt -= 1
-            salmonAmt -= 2
         if response[:3] == 'shr':
             # create a shrimp sushi order
             print('Making shrimp...')
             clickIngredients([rice, nori, shrimp, shrimp])
-            riceAmt -= 1
-            noriAmt -= 1
-            shrimpAmt -= 2
         if response[:3] == 'una':
             # create a unagi roll order
             print('Making unagi roll...')
             clickIngredients([rice, nori, unagi, unagi])
-            rice -= 1
-            nori -= 1
-            unagi -= 2
         if response[:3] == 'dra':
             # create a dragon roll order
             print('Making dragon roll...')
             clickIngredients([rice, rice, nori, roe, unagi, unagi])
-            riceAmt -= 2
-            noriAmt -= 1
-            roeAmt -= 1
-            unagiAmt -= 2
         if response[:3] == 'com':
             # create a combo order
             print('Making combo...')
             clickIngredients([rice, rice, nori, roe, salmon, unagi, shrimp])
-            riceAmt -= 2
-            noriAmt -= 1
-            roeAmt -= 1
-            salmonAmt -= 1
-            unagiAmt -= 1
-            shrimpAmt -= 1
 
-        # clear the plates
-        for platex in range(80, 581, 100):
-            pyautogui.click(platex + windowLeft, 200 + windowTop)
+        clearPlates()
 
+        # put bot window back into focus
         pyautogui.click(botWindow)
         time.sleep(1.5) # mat rolling takes 1.5 seconds to complete
 
 
     # ordering more ingredients
-    if response.isDigit():
+    if response.isdigit():
         # handle ordering more rice
         if response == '2':
             print('Ordering more rice!')
@@ -191,4 +162,5 @@ while True:
                 pyautogui.click(ingredButtons[ingred])
                 pyautogui.click(deliveryButton)
 
+        # put bot window back into focus
         pyautogui.click(botWindow)
