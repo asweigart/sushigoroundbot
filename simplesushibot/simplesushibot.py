@@ -72,12 +72,6 @@ def clearPlates():
         pyautogui.click(platex + winLeft, 200 + winTop)
     pyautogui.click(botWindow) # put bot window back into focus
 
-# show instructions on screen
-print('Commands:')
-print('Make sushi: oni, cal, gun, shr, sal, una, dra, com')
-print('Order ingredients: 1, 2, 3, 4, 5, 6')
-print('Blank command scans orders and clears plates.')
-
 # The main program loop will constantly ask the user for a command until
 # they enter "quit".
 while True:
@@ -128,6 +122,8 @@ while True:
         elif command == 'com':
             print('Making combo...')
             clickIngredients([rice, rice, nori, roe, salmon, unagi, shrimp])
+        else:
+            continue # invalid sushi order, go back to start of loop
 
         clearPlates()
         time.sleep(1.5) # mat rolling takes 1.5 seconds to complete
