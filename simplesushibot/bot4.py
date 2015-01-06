@@ -1,22 +1,12 @@
 #! python3
-# A simpler version of the Sushi Go Round bot made for the NCSS 2015 Summer Camp
-
-# To use this program, have the Sushi Go Round game at the starting screen.
-# At the > prompt, enter the first three letters of an order to make it
-# (oni, gun, cal, sal, shr, una, dra, com) or enter a number 1-6 to order new
-# ingredients.
-#   1-shrimp    2-rice
-#   3-nori      4-roe
-#   5-salmon    6-unagi
-
-# Entering nothing will clear plates and re-scan for orders.
-
 import pyautogui, sys, time
 print('Program started.')
+
 
 # Note where the bot's window is.
 input('Move mouse over bot window and press Enter.')
 botWindow = pyautogui.position()
+
 
 # locate the game window
 window = pyautogui.locateOnScreen('top_left_corner.png')
@@ -36,21 +26,6 @@ rice   = [90 + winLeft, 330 + winTop]
 roe    = [90 + winLeft, 380 + winTop]
 unagi  = [90 + winLeft, 430 + winTop]
 mat    = [200 + winLeft, 400 + winTop]
-
-# preprogram phone coordinates
-phone            = [550 + winLeft, 350 + winTop]
-rice1Button      = [500 + winLeft, 290 + winTop]
-rice2Button      = [550 + winLeft, 300 + winTop]
-toppingButton    = [500 + winLeft, 270 + winTop]
-ingredButtons = {'1': [500 + winLeft, 220 + winTop], # shrimp
-                 '3': [500 + winLeft, 270 + winTop], # nori
-                 '5': [500 + winLeft, 320 + winTop], # salmon
-                 '4': [550 + winLeft, 270 + winTop], # roe
-                 '6': [550 + winLeft, 220 + winTop]} # unagi
-cancelButton     = [580 + winLeft, 330 + winTop]
-deliveryButton   = [500 + winLeft, 300 + winTop]
-phoneRegion      = [440 + winLeft, 190 + winTop, 200, 200]
-
 
 # navigate through start screen
 pyautogui.click(320 + winLeft, 200 + winTop) # click on Play button
@@ -127,29 +102,3 @@ while True:
         clearPlates()
         time.sleep(1.5) # mat rolling takes 1.5 seconds to complete
 
-    elif command.isdigit(): # ordering more ingredients
-        if command == '2': # handle ordering more rice
-            print('Ordering more rice...')
-            pyautogui.click(phone)
-            pyautogui.click(rice1Button)
-            if pyautogui.locateOnScreen('cant_afford_rice.png', region=phoneRegion) != None:
-                print('Cannot afford rice right now.')
-                pyautogui.click(cancelButton) # close the phone menu
-            else:
-                # complete the order
-                pyautogui.click(rice2Button)
-                pyautogui.click(deliveryButton)
-        elif command in '13456': # handle ordering non-rice toppings
-            print('Ordering more toppings...')
-            pyautogui.click(phone)
-            pyautogui.click(toppingButton)
-
-            if pyautogui.locateOnScreen('cant_afford_' + command + '.png', region=phoneRegion) != None:
-                print('Cannot afford that topping right now.')
-                pyautogui.click(cancelButton) # close the phone menu
-            else:
-                # complete the order
-                pyautogui.click(ingredButtons[command])
-                pyautogui.click(deliveryButton)
-
-        clearPlates()
