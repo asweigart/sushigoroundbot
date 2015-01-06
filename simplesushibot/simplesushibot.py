@@ -3,7 +3,8 @@
 
 # To use this program, have the Sushi Go Round game at the starting screen.
 # At the > prompt, enter the first three letters of an order to make it
-# (oni, gun, cal, etc.) or enter a number 1-6 to order new ingredients.
+# (oni, gun, cal, sal, shr, una, dra, com) or enter a number 1-6 to order new
+# ingredients.
 #   1-shrimp    2-rice
 #   3-nori      4-roe
 #   5-salmon    6-unagi
@@ -42,12 +43,11 @@ phone            = (550 + windowLeft, 350 + windowTop)
 rice1Button      = (500 + windowLeft, 290 + windowTop)
 rice2Button      = (550 + windowLeft, 300 + windowTop)
 toppingButton    = (500 + windowLeft, 270 + windowTop)
-ingredButtons = {'shrimp': (500 + windowLeft, 220 + windowTop),
-                 'nori':   (500 + windowLeft, 270 + windowTop),
-                 'salmon': (500 + windowLeft, 320 + windowTop),
-                 'unagi':  (550 + windowLeft, 220 + windowTop),
-                 'roe':    (550 + windowLeft, 270 + windowTop)}
-
+ingredButtons = {'1': (500 + windowLeft, 220 + windowTop), # shrimp
+                 '3': (500 + windowLeft, 270 + windowTop), # nori
+                 '5': (500 + windowLeft, 320 + windowTop), # salmon
+                 '4': (550 + windowLeft, 270 + windowTop), # roe
+                 '6': (550 + windowLeft, 220 + windowTop)} # unagi
 cancelButton     = (580 + windowLeft, 330 + windowTop)
 deliveryButton   = (500 + windowLeft, 300 + windowTop)
 phoneRegion      = (440 + windowLeft, 190 + windowTop, 200, 200)
@@ -61,16 +61,19 @@ pyautogui.click(300 + windowLeft, 380 + windowTop) # click on Continue button
 pyautogui.click(botWindow) # click back on bot window
 
 def clickIngredients(coordinates):
+    # click on all the coordinates in the coordinates list, then click the mat
     for c in coordinates:
         pyautogui.click(c)
     pyautogui.click(mat)
 
 def clearPlates():
-    # clear the plates
+    # clear the plates by clicking on them
     for platex in range(80, 581, 100):
         pyautogui.click(platex + windowLeft, 200 + windowTop)
     pyautogui.click(botWindow) # put bot window back into focus
 
+# The main program loop will constantly ask the user for a command until
+# they enter "quit".
 command = ''
 while True:
     if command == '':
@@ -82,10 +85,12 @@ while True:
                           'dragon_roll_order.png', 'combo_order.png'):
             numOrders = len(list(pyautogui.locateAllOnScreen(foodImage, region=(20 + windowLeft, 40 + windowTop, 580, 60))))
             if numOrders > 0:
+                # only display amount of orders if there are any
                 print(foodImage[:3], numOrders)
         print('==================')
 
-    # get the user's command
+    # get the user's command (One of: oni, cal, gun, shr, sal, dra, com, 1,
+    # 2, 3, 4, 5, 6, quit)
     command = input('> ')
 
     if command == 'quit':
@@ -95,37 +100,30 @@ while True:
         clearPlates()
         continue # go back to start of loop
 
+
     if not command.isdigit(): # command is to create an order
-        if command[:3] == 'oni':
-            # create an onigiri order
+        if command == 'oni':
             print('Making onigiri...')
             clickIngredients([rice, rice, nori])
-        if command[:3] == 'cal':
-            # create a california roll order
-            print('Making onigiri...')
+        if command == 'cal':
+            print('Making california roll...')
             clickIngredients([rice, nori, roe])
-        if command[:3] == 'gun':
-            # create a gunkan maki order
+        if command == 'gun':
             print('Making gunkan maki...')
             clickIngredients([rice, nori, roe, roe])
-        if command[:3] == 'sal':
-            # create a salmon roll order
-            print('Making salmon...')
+        if command == 'sal':
+            print('Making salmon roll...')
             clickIngredients([rice, nori, salmon, salmon])
-        if command[:3] == 'shr':
-            # create a shrimp sushi order
-            print('Making shrimp...')
+        if command == 'shr':
+            print('Making shrimp sushi...')
             clickIngredients([rice, nori, shrimp, shrimp])
-        if command[:3] == 'una':
-            # create a unagi roll order
+        if command == 'una':
             print('Making unagi roll...')
             clickIngredients([rice, nori, unagi, unagi])
-        if command[:3] == 'dra':
-            # create a dragon roll order
+        if command == 'dra':
             print('Making dragon roll...')
             clickIngredients([rice, rice, nori, roe, unagi, unagi])
-        if command[:3] == 'com':
-            # create a combo order
+        if command == 'com':
             print('Making combo...')
             clickIngredients([rice, rice, nori, roe, salmon, unagi, shrimp])
 
@@ -142,8 +140,9 @@ while True:
             pyautogui.click(rice1Button)
             if pyautogui.locateOnScreen('cant_afford_rice.png', region=phoneRegion) != None:
                 print('Cannot afford rice right now.')
-                pyautogui.click(cancelButton)
+                pyautogui.click(cancelButton) # close the phone menu
             else:
+                # complete the order
                 pyautogui.click(rice2Button)
                 pyautogui.click(deliveryButton)
 
@@ -152,22 +151,13 @@ while True:
             print('Ordering more toppings!')
             pyautogui.click(phone)
             pyautogui.click(toppingButton)
-            if command == '1':
-                ingred = 'shrimp'
-            if command == '3':
-                ingred = 'nori'
-            if command == '4':
-                ingred = 'roe'
-            if command == '5':
-                ingred = 'salmon'
-            if command == '6':
-                ingred = 'unagi'
 
-            if pyautogui.locateOnScreen('cant_afford_' + ingred + '.png', region=phoneRegion) != None:
-                print('Cannot afford ' + ingred + ' right now.')
-                pyautogui.click(cancelButton)
+            if pyautogui.locateOnScreen('cant_afford_' + command + '.png', region=phoneRegion) != None:
+                print('Cannot afford that topping right now.')
+                pyautogui.click(cancelButton) # close the phone menu
             else:
-                pyautogui.click(ingredButtons[ingred])
+                # complete the order
+                pyautogui.click(ingredButtons[command])
                 pyautogui.click(deliveryButton)
 
         clearPlates()
