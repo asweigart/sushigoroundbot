@@ -15,8 +15,7 @@ import pyautogui, sys, time
 print('Program started.')
 
 # Note where the bot's window is.
-print('Move mouse over bot window and press Enter.')
-input()
+input('Move mouse over bot window and press Enter.')
 botWindow = pyautogui.position()
 
 # locate the game window
@@ -72,9 +71,9 @@ def clearPlates():
         pyautogui.click(platex + windowLeft, 200 + windowTop)
     pyautogui.click(botWindow) # put bot window back into focus
 
-response = ''
+command = ''
 while True:
-    if response == '':
+    if command == '':
         # read screen for all orders and display them
         print('CURRENT ORDERS: (press Enter to re-scan)')
         for foodImage in ('onigiri_order.png', 'california_roll_order.png',
@@ -86,46 +85,46 @@ while True:
                 print(foodImage[:3], numOrders)
         print('==================')
 
-    # get the user's action
-    response = input('> ')
+    # get the user's command
+    command = input('> ')
 
-    if response == 'quit':
+    if command == 'quit':
         sys.exit() # exit program
 
-    if response == '':
+    if command == '':
         clearPlates()
         continue # go back to start of loop
 
-    if not response.isdigit(): # command is to create an order
-        if response[:3] == 'oni':
+    if not command.isdigit(): # command is to create an order
+        if command[:3] == 'oni':
             # create an onigiri order
             print('Making onigiri...')
             clickIngredients([rice, rice, nori])
-        if response[:3] == 'cal':
+        if command[:3] == 'cal':
             # create a california roll order
             print('Making onigiri...')
             clickIngredients([rice, nori, roe])
-        if response[:3] == 'gun':
+        if command[:3] == 'gun':
             # create a gunkan maki order
             print('Making gunkan maki...')
             clickIngredients([rice, nori, roe, roe])
-        if response[:3] == 'sal':
+        if command[:3] == 'sal':
             # create a salmon roll order
             print('Making salmon...')
             clickIngredients([rice, nori, salmon, salmon])
-        if response[:3] == 'shr':
+        if command[:3] == 'shr':
             # create a shrimp sushi order
             print('Making shrimp...')
             clickIngredients([rice, nori, shrimp, shrimp])
-        if response[:3] == 'una':
+        if command[:3] == 'una':
             # create a unagi roll order
             print('Making unagi roll...')
             clickIngredients([rice, nori, unagi, unagi])
-        if response[:3] == 'dra':
+        if command[:3] == 'dra':
             # create a dragon roll order
             print('Making dragon roll...')
             clickIngredients([rice, rice, nori, roe, unagi, unagi])
-        if response[:3] == 'com':
+        if command[:3] == 'com':
             # create a combo order
             print('Making combo...')
             clickIngredients([rice, rice, nori, roe, salmon, unagi, shrimp])
@@ -135,9 +134,9 @@ while True:
 
 
     # ordering more ingredients
-    if response.isdigit():
+    if command.isdigit():
         # handle ordering more rice
-        if response == '2':
+        if command == '2':
             print('Ordering more rice!')
             pyautogui.click(phone)
             pyautogui.click(rice1Button)
@@ -149,19 +148,19 @@ while True:
                 pyautogui.click(deliveryButton)
 
         # handle ordering non-rice toppings
-        if response in '13456':
+        if command in '13456':
             print('Ordering more toppings!')
             pyautogui.click(phone)
             pyautogui.click(toppingButton)
-            if response == '1':
+            if command == '1':
                 ingred = 'shrimp'
-            if response == '3':
+            if command == '3':
                 ingred = 'nori'
-            if response == '4':
+            if command == '4':
                 ingred = 'roe'
-            if response == '5':
+            if command == '5':
                 ingred = 'salmon'
-            if response == '6':
+            if command == '6':
                 ingred = 'unagi'
 
             if pyautogui.locateOnScreen('cant_afford_' + ingred + '.png', region=phoneRegion) != None:
