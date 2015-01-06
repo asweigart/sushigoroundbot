@@ -72,11 +72,21 @@ def clearPlates():
         pyautogui.click(platex + winLeft, 200 + winTop)
     pyautogui.click(botWindow) # put bot window back into focus
 
+# show instructions on screen
+print('Commands:')
+print('Make sushi: oni, cal, gun, shr, sal, una, dra, com')
+print('Order ingredients: 1, 2, 3, 4, 5, 6')
+
 # The main program loop will constantly ask the user for a command until
 # they enter "quit".
-command = ''
 while True:
-    if command == '':
+    # get the user's command
+    command = input('> ')
+
+    if command == 'quit':
+        sys.exit() # exit program
+
+    elif command == '':
         # read screen for all orders and display them
         print('CURRENT ORDERS: (press Enter to re-scan)')
         for foodImage in ['onigiri_order.png', 'california_roll_order.png',
@@ -89,52 +99,40 @@ while True:
                 print(foodImage[:3], numOrders)
         print('==================')
 
-    # get the user's command (One of: oni, cal, gun, shr, sal, dra, com, 1,
-    # 2, 3, 4, 5, 6, quit)
-    command = input('> ')
-
-    if command == 'quit':
-        sys.exit() # exit program
-
-    if command == '':
         clearPlates()
         continue # go back to start of loop
 
-
-    if not command.isdigit(): # command is to create an order
+    elif not command.isdigit(): # command is to create an order
         if command == 'oni':
             print('Making onigiri...')
             clickIngredients([rice, rice, nori])
-        if command == 'cal':
+        elif command == 'cal':
             print('Making california roll...')
             clickIngredients([rice, nori, roe])
-        if command == 'gun':
+        elif command == 'gun':
             print('Making gunkan maki...')
             clickIngredients([rice, nori, roe, roe])
-        if command == 'sal':
+        elif command == 'sal':
             print('Making salmon roll...')
             clickIngredients([rice, nori, salmon, salmon])
-        if command == 'shr':
+        elif command == 'shr':
             print('Making shrimp sushi...')
             clickIngredients([rice, nori, shrimp, shrimp])
-        if command == 'una':
+        elif command == 'una':
             print('Making unagi roll...')
             clickIngredients([rice, nori, unagi, unagi])
-        if command == 'dra':
+        elif command == 'dra':
             print('Making dragon roll...')
             clickIngredients([rice, rice, nori, roe, unagi, unagi])
-        if command == 'com':
+        elif command == 'com':
             print('Making combo...')
             clickIngredients([rice, rice, nori, roe, salmon, unagi, shrimp])
 
         clearPlates()
         time.sleep(1.5) # mat rolling takes 1.5 seconds to complete
 
-
-    # ordering more ingredients
-    if command.isdigit():
-        # handle ordering more rice
-        if command == '2':
+    elif command.isdigit(): # ordering more ingredients
+        if command == '2': # handle ordering more rice
             print('Ordering more rice!')
             pyautogui.click(phone)
             pyautogui.click(rice1Button)
@@ -145,9 +143,7 @@ while True:
                 # complete the order
                 pyautogui.click(rice2Button)
                 pyautogui.click(deliveryButton)
-
-        # handle ordering non-rice toppings
-        if command in '13456':
+        elif command in '13456': # handle ordering non-rice toppings
             print('Ordering more toppings!')
             pyautogui.click(phone)
             pyautogui.click(toppingButton)
