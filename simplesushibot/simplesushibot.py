@@ -54,11 +54,11 @@ phoneRegion      = [440 + winLeft, 190 + winTop, 200, 200]
 
 
 # navigate through start screen
-pyautogui.click[320 + winLeft, 200 + winTop] # click on Play button
-pyautogui.click[300 + winLeft, 380 + winTop] # click on Continue button
-pyautogui.click[550 + winLeft, 450 + winTop] # click on Skip
-pyautogui.click[300 + winLeft, 380 + winTop] # click on Continue button
-pyautogui.click[botWindow] # click back on bot window
+pyautogui.click(320 + winLeft, 200 + winTop) # click on Play button
+pyautogui.click(300 + winLeft, 380 + winTop) # click on Continue button
+pyautogui.click(550 + winLeft, 450 + winTop) # click on Skip
+pyautogui.click(300 + winLeft, 380 + winTop) # click on Continue button
+pyautogui.click(botWindow) # click back on bot window
 
 def clickIngredients(coordinates):
     # click on all the coordinates in the coordinates list, then click the mat
@@ -76,6 +76,7 @@ def clearPlates():
 print('Commands:')
 print('Make sushi: oni, cal, gun, shr, sal, una, dra, com')
 print('Order ingredients: 1, 2, 3, 4, 5, 6')
+print('Blank command scans orders and clears plates.')
 
 # The main program loop will constantly ask the user for a command until
 # they enter "quit".
@@ -133,7 +134,7 @@ while True:
 
     elif command.isdigit(): # ordering more ingredients
         if command == '2': # handle ordering more rice
-            print('Ordering more rice!')
+            print('Ordering more rice...')
             pyautogui.click(phone)
             pyautogui.click(rice1Button)
             if pyautogui.locateOnScreen('cant_afford_rice.png', region=phoneRegion) != None:
@@ -144,7 +145,7 @@ while True:
                 pyautogui.click(rice2Button)
                 pyautogui.click(deliveryButton)
         elif command in '13456': # handle ordering non-rice toppings
-            print('Ordering more toppings!')
+            print('Ordering more toppings...')
             pyautogui.click(phone)
             pyautogui.click(toppingButton)
 
