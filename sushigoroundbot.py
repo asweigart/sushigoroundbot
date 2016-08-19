@@ -150,7 +150,7 @@ def navigateStartGameMenu():
 
     # click on Play
     logging.info('Looking for Play button...')
-    while True: # loop because it could be the blue or pink Play button displayed at the moment.
+    while True:  # loop because it could be the blue or pink Play button displayed at the moment.
         pos = None
         try:
             pos = pyautogui.screenshotUtil.locateCenterOnScreen(imPath('play_button.png'), region=GAME_REGION, grayscale=True)
@@ -163,7 +163,7 @@ def navigateStartGameMenu():
 
     # click on Continue
     logging.debug('Game Region: %s' % repr(GAME_REGION))
-    time.sleep(1)
+    time.sleep(2)
     pos = pyautogui.screenshotUtil.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION, grayscale=True)
     pyautogui.click((pos[0] + GAME_REGION[0], pos[1] + GAME_REGION[1]), duration=0.25)
     logging.debug('Clicked on Continue button (pos: %s)' %repr(pos))
@@ -178,12 +178,12 @@ def navigateStartGameMenu():
             pass
         if pos is not None:
             break
-    pyautogui.click((pos[0]+GAME_REGION[0],pos[1]+GAME_REGION[1]), duration=0.25)
+    pyautogui.click((pos[0] + GAME_REGION[0], pos[1] + GAME_REGION[1]), duration=0.25)
     logging.debug('Clicked on Skip button (pos: %s)' %repr(pos))
 
     # click on Continue
     pos = pyautogui.screenshotUtil.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION, grayscale=True)
-    pyautogui.click((pos[0]+GAME_REGION[0],pos[1]+GAME_REGION[1]), duration=0.25)
+    pyautogui.click((pos[0] + GAME_REGION[0], pos[1] + GAME_REGION[1]), duration=0.25)
     logging.debug('Clicked on Continue button (pos: %s)' %repr(pos))
 
 
@@ -286,11 +286,11 @@ def startServing():
 
                 # Click buttons to continue to next level.
                 pos = pyautogui.screenshotUtil.locateCenterOnScreen(imPath('continue_button.png'),region=GAME_REGION,grayscale=True)
-                pyautogui.click((pos[0]+GAME_REGION[0],pos[1]+GAME_REGION[1]), duration=0.25)
+                pyautogui.click((pos[0] + GAME_REGION[0], pos[1] + GAME_REGION[1]), duration=0.25)
                 logging.debug('Clicked on Continue button (pos: %s)' %repr(pos))
-                pos = pyautogui.screenshotUtil.locateCenterOnScreen(imPath('continue_button.png'),region=GAME_REGION,grayscale=True)
-                if LEVEL <= 7: # click the second continue if the game isn't finished.
-                    pyautogui.click((pos[0]+GAME_REGION[0],pos[1]+GAME_REGION[1]), duration=0.25)
+                time.sleep(2)
+                if LEVEL <= 7:  # click the second continue if the game isn't finished.
+                    pyautogui.click((pos[0] + GAME_REGION[0], pos[1] + GAME_REGION[1]), duration=0.25)
                     logging.debug('Clicked on Continue button (pos: %s)' %repr(pos))
 
         oldOrders = currentOrders
