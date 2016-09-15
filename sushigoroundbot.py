@@ -7,8 +7,8 @@ A bot program to automatically play the Sushi Go Round flash game at http://mini
 
 import pyautogui, time, os, logging, sys, random, copy
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d: %(message)s', datefmt='%H:%M:%S')
-#logging.disable(logging.DEBUG) # uncomment to block debug log messages
+logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d: %(message)s', datefmt='%H:%M:%S')
+#logging.disable(logging.info) # uncomment to block debug log messages
 
 # Food order constants (don't change these: the image filenames depend on these specific values)
 ONIGIRI = 'onigiri'
@@ -69,8 +69,8 @@ MAT_COORDS = None
 
 def main():
     """Runs the entire program. The Sushi Go Round game must be visible on the screen and the PLAY button visible."""
-    logging.debug('Program Started. Press Ctrl-C to abort at any time.')
-    logging.debug('To interrupt mouse movement, move mouse to upper left corner.')
+    logging.info('Program Started. Press Ctrl-C to abort at any time.')
+    logging.info('To interrupt mouse movement, move mouse to upper left corner.')
     getGameRegion()
     navigateStartGameMenu()
     setupCoordinates()
@@ -87,7 +87,7 @@ def getGameRegion():
     global GAME_REGION
 
     # identify the top-left corner
-    logging.debug('Finding game region...')
+    logging.info('Finding game region...')
     region = pyautogui.locateOnScreen(imPath('top_right_corner.png'))
     if region is None:
         raise Exception('Could not find game on screen. Is the game visible?')
@@ -96,7 +96,7 @@ def getGameRegion():
     topRightX = region[0] + region[2] # left + width
     topRightY = region[1] # top
     GAME_REGION = (topRightX - 640, topRightY, 640, 480) # the game screen is always 640 x 480
-    logging.debug('Game region found: %s' % (GAME_REGION,))
+    logging.info('Game region found: %s' % (GAME_REGION,))
 
 
 def setupCoordinates():
@@ -130,32 +130,32 @@ def navigateStartGameMenu():
     # Click on everything needed to get past the menus at the start of the game.
 
     # click on Play
-    logging.debug('Looking for Play button...')
+    logging.info('Looking for Play button...')
     while True: # loop because it could be the blue or pink Play button displayed at the moment.
         pos = pyautogui.locateCenterOnScreen(imPath('play_button.png'), region=GAME_REGION)
         if pos is not None:
             break
     pyautogui.click(pos, duration=0.25)
-    logging.debug('Clicked on Play button.')
+    logging.info('Clicked on Play button.')
 
     # click on Continue
     pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
     pyautogui.click(pos, duration=0.25)
-    logging.debug('Clicked on Continue button.')
+    logging.info('Clicked on Continue button.')
 
     # click on Skip
-    logging.debug('Looking for Skip button...')
+    logging.info('Looking for Skip button...')
     while True: # loop because it could be the yellow or red Skip button displayed at the moment.
         pos = pyautogui.locateCenterOnScreen(imPath('skip_button.png'), region=GAME_REGION)
         if pos is not None:
             break
     pyautogui.click(pos, duration=0.25)
-    logging.debug('Clicked on Skip button.')
+    logging.info('Clicked on Skip button.')
 
     # click on Continue
     pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
     pyautogui.click(pos, duration=0.25)
-    logging.debug('Clicked on Continue button.')
+    logging.info('Clicked on Continue button.')
 
 
 def startServing():
@@ -176,11 +176,11 @@ def startServing():
         currentOrders = getOrders()
         added, removed = getOrdersDifference(currentOrders, oldOrders)
         if added != {}:
-            logging.debug('New orders: %s' % (list(added.values())))
+            logging.info('New orders: %s' % (list(added.values())))
             for k in added:
                 remakeTimes[k] = time.time() + TIME_TO_REMAKE
         if removed != {}:
-            logging.debug('Removed orders: %s' % (list(removed.values())))
+            logging.info('Removed orders: %s' % (list(removed.values())))
             for k in removed:
                 del remakeTimes[k]
 
@@ -189,7 +189,7 @@ def startServing():
             if time.time() > remakeTime:
                 remakeTimes[k] = time.time() + TIME_TO_REMAKE # reset remake time
                 remakeOrders[k] = currentOrders[k]
-                logging.debug('%s added to remake orders.' % (currentOrders[k]))
+                logging.info('%s added to remake orders.' % (currentOrders[k]))
 
         # Attempt to make the order.
         for pos, order in added.items():
@@ -197,7 +197,7 @@ def startServing():
             if result is not None:
                 orderIngredient(result)
                 backOrders[pos] = order
-                logging.debug('Ingredients for %s not available. Putting on back order.' % (order))
+                logging.info('Ingredients for %s not available. Putting on back order.' % (order))
 
         # Clear any finished plates.
         if random.randint(1, 10) == 1 or time.time() - PLATE_CLEARING_FREQ > LAST_PLATE_CLEARING:
@@ -211,18 +211,18 @@ def startServing():
             result = makeOrder(order)
             if result is None:
                 del backOrders[pos] # remove from back orders
-                logging.debug('Filled back order for %s.' % (order))
+                logging.info('Filled back order for %s.' % (order))
 
         # Go through and see if any remake orders can be filled.
         for pos, order in copy.copy(remakeOrders).items():
             if pos not in currentOrders:
                 del remakeOrders[pos]
-                logging.debug('Canceled remake order for %s.' % (order))
+                logging.info('Canceled remake order for %s.' % (order))
                 continue
             result = makeOrder(order)
             if result is None:
                 del remakeOrders[pos] # remove from remake orders
-                logging.debug('Filled remake order for %s.' % (order))
+                logging.info('Filled remake order for %s.' % (order))
 
         if random.randint(1, 5) == 1:
             # order any ingredients that are below the minimum amount
@@ -249,18 +249,18 @@ def startServing():
                 oldOrders = {}
 
 
-                logging.debug('Level %s complete.' % (LEVEL))
+                logging.info('Level %s complete.' % (LEVEL))
                 LEVEL += 1
                 time.sleep(5) # give another 5 seconds to tally score
 
                 # Click buttons to continue to next level.
                 pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
                 pyautogui.click(pos, duration=0.25)
-                logging.debug('Clicked on Continue button.')
+                logging.info('Clicked on Continue button.')
                 pos = pyautogui.locateCenterOnScreen(imPath('continue_button.png'), region=GAME_REGION)
                 if LEVEL <= 7: # click the second continue if the game isn't finished.
                     pyautogui.click(pos, duration=0.25)
-                    logging.debug('Clicked on Continue button.')
+                    logging.info('Clicked on Continue button.')
 
         oldOrders = currentOrders
 
@@ -327,7 +327,7 @@ def makeOrder(orderType):
     # check that all ingredients are available in the inventory.
     for ingredient, amount in RECIPE[orderType].items():
         if INVENTORY[ingredient] < amount:
-            logging.debug('More %s is needed to make %s.' % (ingredient, orderType))
+            logging.info('More %s is needed to make %s.' % (ingredient, orderType))
             return ingredient
 
     # click on each of the ingredients
@@ -337,7 +337,7 @@ def makeOrder(orderType):
             INVENTORY[ingredient] -= 1
     findAndClickPlatesOnBelt() # get rid of any left over meals on the conveyor belt, which may stall this meal from being loaded on the belt
     pyautogui.click(MAT_COORDS, duration=0.25) # click the rolling mat to make the order
-    logging.debug('Made a %s order.' % (orderType))
+    logging.info('Made a %s order.' % (orderType))
     ROLLING_COMPLETE = time.time() + 1.5 # give the mat enough time (1.5 seconds) to finish rolling before being used again
 
 
@@ -347,12 +347,12 @@ def findAndClickPlatesOnBelt():
         result = pyautogui.locateCenterOnScreen(imPath('%s_plate_color.png' % (color)), region=(GAME_REGION[0] + 343, GAME_REGION[1] + 300, 50, 100))
         if result is not None:
             pyautogui.click(result)
-            logging.debug('Clicked on %s plate on belt at X: %s Y: %s' % (color, result[0], result[1]))
+            logging.info('Clicked on %s plate on belt at X: %s Y: %s' % (color, result[0], result[1]))
 
 
 def orderIngredient(ingredient):
     """Do the clicks to purchase an ingredient. If successful, the ORDERING_COMPLETE dictionary is updated for when the ingredients will arive and INVENTORY can be updated. (This is handled in the updateInventory() function.)"""
-    logging.debug('Ordering more %s (inventory says %s left)...' % (ingredient, INVENTORY[ingredient]))
+    logging.info('Ordering more %s (inventory says %s left)...' % (ingredient, INVENTORY[ingredient]))
     pyautogui.click(PHONE_COORDS, duration=0.25)
 
     if ingredient == RICE and ORDERING_COMPLETE[RICE] is None:
@@ -361,7 +361,7 @@ def orderIngredient(ingredient):
 
         # Check if we can't afford the rice
         if pyautogui.locateOnScreen(imPath('cant_afford_rice.png'), region=(GAME_REGION[0] + 498, GAME_REGION[1] + 242, 90, 75)):
-            logging.debug("Can't afford rice. Canceling.")
+            logging.info("Can't afford rice. Canceling.")
             pyautogui.click(GAME_REGION[0] + 585, GAME_REGION[1] + 335, duration=0.25) # click cancel phone button
             return
 
@@ -369,7 +369,7 @@ def orderIngredient(ingredient):
         pyautogui.click(RICE2_COORDS, duration=0.25)
         pyautogui.click(NORMAL_DELIVERY_BUTTON_COORDS, duration=0.25)
         ORDERING_COMPLETE[RICE] = time.time() + NORMAL_RESTOCK_TIME
-        logging.debug('Ordered more %s' % (RICE))
+        logging.info('Ordered more %s' % (RICE))
         return
 
     elif ORDERING_COMPLETE[ingredient] is None:
@@ -378,7 +378,7 @@ def orderIngredient(ingredient):
 
         # Check if we can't afford the ingredient
         if pyautogui.locateOnScreen(imPath('cant_afford_%s.png' % (ingredient)), region=(GAME_REGION[0] + 446, GAME_REGION[1] + 187, 180, 180)):
-            logging.debug("Can't afford %s. Canceling." % (ingredient))
+            logging.info("Can't afford %s. Canceling." % (ingredient))
             pyautogui.click(GAME_REGION[0] + 597, GAME_REGION[1] + 337, duration=0.25) # click cancel phone button
             return
 
@@ -386,12 +386,12 @@ def orderIngredient(ingredient):
         pyautogui.click(ORDER_BUTTON_COORDS[ingredient], duration=0.25)
         pyautogui.click(NORMAL_DELIVERY_BUTTON_COORDS, duration=0.25)
         ORDERING_COMPLETE[ingredient] = time.time() + NORMAL_RESTOCK_TIME
-        logging.debug('Ordered more %s' % (ingredient))
+        logging.info('Ordered more %s' % (ingredient))
         return
 
     # The ingredient has already been ordered, so close the phone menu.
     pyautogui.click(GAME_REGION[0] + 589, GAME_REGION[1] + 341) # click cancel phone button
-    logging.debug('Already ordered %s.' % (ingredient))
+    logging.info('Already ordered %s.' % (ingredient))
 
 
 def updateInventory():
@@ -404,8 +404,8 @@ def updateInventory():
                 INVENTORY[ingredient] += 5
             elif ingredient in (NORI, ROE, RICE):
                 INVENTORY[ingredient] += 10
-            logging.debug('Updated inventory with added %s:' % (ingredient))
-            logging.debug(INVENTORY)
+            logging.info('Updated inventory with added %s:' % (ingredient))
+            logging.info(INVENTORY)
 
 
 def checkForGameOver():
@@ -424,7 +424,7 @@ def checkForGameOver():
     # check for "You Fail" message
     result = pyautogui.locateOnScreen(imPath('you_failed.png'), region=(GAME_REGION[0] + 167, GAME_REGION[1] + 133, 314, 39))
     if result is not None:
-        logging.debug('Game over. Quitting.')
+        logging.info('Game over. Quitting.')
         sys.exit()
 
 
